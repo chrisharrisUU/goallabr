@@ -1,0 +1,18 @@
+Package: goallabr
+Type: Package
+Title: Goallab Toolkit
+Version: 0.1.0
+Author: c(
+      person("Chris", "Harris", email = "c.a.harris@uu.nl", role = c("cre", "aut")),
+      person("Myrthel", "Dogge", email = "m.dogge@uu.nl", role = "aut")
+    )
+Description: Standardized function that calculates confidence intervals for 
+      data that contains at least one within factor.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Imports:
+      dplyr,
+      rlang
+LazyData: true
+Maintainer: Chris Harris <c.a.harris@uu.nl>
+RoxygenNote: 6.1.1

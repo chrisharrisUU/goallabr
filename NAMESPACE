@@ -1,0 +1,4 @@
+exportPattern("^[[:alpha:]]+")
+import(dplyr)
+import(rlang)
+importFrom("stats", "qt", "sd")
