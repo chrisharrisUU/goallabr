@@ -3,35 +3,35 @@
 #' \code{within_ci} returns lower and upper bounds of confidence intervals
 #' per factor for data with at least one within subject factor.
 #'
-#' @param .data: Dataframe in long format
-#' @param .subject: Name of single column in .data containing participant identifiers
-#' @param .value: Name of single column in .data containing values of DV
-#' @param .conf: Confidence interval to be calculated
-#' @param .ws_factors: names of (multiple) columns in .data containing within-subject factors
-#' @param .bs_factors: names of (multiple) columns in .data containing between-subject factors
+#' @param data: Dataframe in long format
+#' @param subject: Name of single column in data containing participant identifiers
+#' @param value: Name of single column in data containing values of DV
+#' @param conf: Confidence interval to be calculated
+#' @param ws_factors: names of (multiple) columns in data containing within-subject factors
+#' @param bs_factors: names of (multiple) columns in data containing between-subject factors
 #' @return Returns length of Confidence Intervals per factor
 #
 #' @examples
 #' # One within factor, no between factors
-#' WithinS_CI(.data = data_1w,
-#'            .subject = subject,
-#'            .value = DV,
-#'            .ws_factors = within1)
+#' within_ci(data = data_1w,
+#'            subject = subject,
+#'            value = DV,
+#'            ws_factors = within1)
 #'
 #' # Multiple within and between factors
-#' WithinS_CI(.data = data_2w2b,
-#'            .subject = subject,
-#'            .value = DV,
-#'            .ws_factors = c(within1, within2),
-#'            .bs_factors = c(between1, between2))
+#' within_ci(data = data_2w2b,
+#'            subject = subject,
+#'            value = DV,
+#'            ws_factors = c(within1, within2),
+#'            bs_factors = c(between1, between2))
 #'
 #' # Multiple within and between factors with graph
 #'  data_2w2b %>%
-#'    WithinS_CI(.data = .,
-#'              .subject = subject,
-#'              .value = DV,
-#'              .ws_factors = c(within1, within2),
-#'              .bs_factors = c(between1, between2)) %>%
+#'    within_ci(data = .,
+#'              subject = subject,
+#'              value = DV,
+#'              ws_factors = c(within1, within2),
+#'              bs_factors = c(between1, between2)) %>%
 #'   ggplot(aes(x = within1,
 #'              y = sample_mean,
 #'              group = within2)) +
@@ -48,12 +48,15 @@
 #'        title = "Example bar plot - two within two between") +
 #'   theme_classic() +
 #'   facet_grid(between1 ~ between2)
-within_ci <- function(.data,
-                       .subject,
-                       .value,
-                       .conf = .95,
-                       .ws_factors = c(),
-                       .bs_factors = c()) {
+#'
+#' @importFrom dplyr %>%
+#' @export
+within_ci <- function(data,
+                      subject,
+                      value,
+                      conf = .95,
+                      ws_factors = c(),
+                      bs_factors = c()) {
 
   # data: Dataframe in long format
   # subject: Name of single column in .data containing participant identifiers
@@ -64,24 +67,24 @@ within_ci <- function(.data,
 
   ### Preparations----
   # Quote all column names handed into function
-  .subject <- enquo(.subject)
-  .value <- enquo(.value)
-  .ws_factors <- enexprs(.ws_factors)
-  .bs_factors <- enexprs(.bs_factors)
-  .all_grouping <- vars(!!!.bs_factors, !!!.ws_factors) # All within and between factors
+  subject <- rlang::enquo(subject)
+  value <- rlang::enquo(value)
+  ws_factors <- rlang::enexprs(ws_factors)
+  bs_factors <- rlang::enexprs(bs_factors)
+  all_grouping <- dplyr::vars(!!!bs_factors, !!!ws_factors) # All within and between factors
 
   # Determine total number of levels for all within subject variables
-  .nwithin_levels <- .data %>%
-    select(!!!.ws_factors) %>%
+  nwithin_levels <- data %>%
+    dplyr::select(!!!ws_factors) %>%
     table() %>%
     dim() %>%
     prod()
 
   # Check that no duplicates and, importantly, all within-factors are declared
-  .check <- .data %>%
-    group_by(!!.subject) %>%
-    summarize(n = n())
-  if (any(.check$n > .nwithin_levels)) {
+  check <- data %>%
+    dplyr::group_by(!!subject) %>%
+    dplyr::summarize(n = dplyr::n())
+  if (any(check$n > nwithin_levels)) {
     warning("Probably you are not declaring all within-factors or you may have duplicates in your data!")
     return(NULL)
   }
@@ -89,42 +92,42 @@ within_ci <- function(.data,
   ### Normalize data----
   # (i.e., get rid of between-subject variance)
   # Exact calculation is dependent on existance of between-subject factors
-  if (is_quosure(.bs_factors)) {
+  if (rlang::is_quosure(bs_factors)) {
     # With between-subject factors
-    .norm_data <- .data %>%
-      group_by(!!.subject) %>%
-      mutate(mean_pp = mean(!!.value)) %>%
-      group_by(!!!.bs_factors) %>%
-      mutate(grand_mean = mean(!!.value)) %>%
-      ungroup() %>%
-      mutate(norm_mean = !!.value - mean_pp + grand_mean)
+    norm_data <- data %>%
+      dplyr::group_by(!!subject) %>%
+      dplyr::mutate(mean_pp = mean(!!value)) %>%
+      dplyr::group_by(!!!bs_factors) %>%
+      dplyr::mutate(grand_mean = mean(!!value)) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(norm_mean = !!value - .data$mean_pp + .data$grand_mean)
   } else {
     # Without between-subject factors
-    .norm_data <- .data %>%
-      group_by(!!.subject) %>%
-      mutate(mean_pp = mean(!!.value)) %>%
-      ungroup() %>%
-      mutate(grand_mean = mean(!!.value)) %>%
-      mutate(norm_mean = !!.value - mean_pp + grand_mean)
+    norm_data <- data %>%
+      dplyr::group_by(!!subject) %>%
+      dplyr::mutate(mean_pp = mean(!!value)) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(grand_mean = mean(!!value)) %>%
+      dplyr::mutate(norm_mean = !!value - .data$mean_pp + .data$grand_mean)
   }
 
   ### Calculate all measures of interest----
   # Calculate correction factor
   # (square root is necessary due to multiplication with sd's instead of variances)
-  .correction_factor <- sqrt(.nwithin_levels/(.nwithin_levels - 1))
+  correction_factor <- sqrt(nwithin_levels/(nwithin_levels - 1))
 
   # Get sample size, mean and standard deviation for each condition
-  .sum_data <- .norm_data %>%
-    group_by_at(.all_grouping) %>% # Group by each within and between factor
-    summarise(sample_mean = mean(!!.value),
-              normalized_mean = mean(norm_mean),
-              sample_sd = sd(norm_mean),
-              sample_N = n()) %>%
-    mutate(corrected_sd = sample_sd * .correction_factor) %>%
-    mutate(sample_se = corrected_sd/sqrt(sample_N)) %>%
-    mutate(CI_mult = qt(.conf/2 + .5, sample_N - 1)) %>%
-    mutate(CI = sample_se * CI_mult)
+  sum_data <- norm_data %>%
+    dplyr::group_by_at(all_grouping) %>% # Group by each within and between factor
+    dplyr::summarise(sample_mean = mean(!!value),
+                     normalized_mean = mean(.data$norm_mean),
+                     sample_sd = stats::sd(.data$norm_mean),
+                     sample_N = dplyr::n()) %>%
+    dplyr::mutate(corrected_sd = .data$sample_sd * correction_factor) %>%
+    dplyr::mutate(sample_se = .data$corrected_sd/sqrt(.data$sample_N)) %>%
+    dplyr::mutate(CI_mult = stats::qt(conf/2 + .5, .data$sample_N - 1)) %>%
+    dplyr::mutate(CI = .data$sample_se * .data$CI_mult)
 
   ### Return output----
-  .sum_data
+  sum_data
 }

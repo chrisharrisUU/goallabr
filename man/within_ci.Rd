@@ -4,21 +4,21 @@
 \alias{within_ci}
 \title{Within Subjects Confidence Intervals.}
 \usage{
-within_ci(.data, .subject, .value, .conf = 0.95, .ws_factors = c(),
-  .bs_factors = c())
+within_ci(data, subject, value, conf = 0.95, ws_factors = c(),
+  bs_factors = c())
 }
 \arguments{
-\item{.data:}{Dataframe in long format}
+\item{data:}{Dataframe in long format}
 
-\item{.subject:}{Name of single column in .data containing participant identifiers}
+\item{subject:}{Name of single column in data containing participant identifiers}
 
-\item{.value:}{Name of single column in .data containing values of DV}
+\item{value:}{Name of single column in data containing values of DV}
 
-\item{.conf:}{Confidence interval to be calculated}
+\item{conf:}{Confidence interval to be calculated}
 
-\item{.ws_factors:}{names of (multiple) columns in .data containing within-subject factors}
+\item{ws_factors:}{names of (multiple) columns in data containing within-subject factors}
 
-\item{.bs_factors:}{names of (multiple) columns in .data containing between-subject factors}
+\item{bs_factors:}{names of (multiple) columns in data containing between-subject factors}
 }
 \value{
 Returns length of Confidence Intervals per factor
@@ -29,24 +29,25 @@ per factor for data with at least one within subject factor.
 }
 \examples{
 # One within factor, no between factors
-WithinS_CI(.data = data_1w,
-           .subject = subject,
-           .value = DV,
-           .ws_factors = within1)
+within_ci(data = data_1w,
+           subject = subject,
+           value = DV,
+           ws_factors = within1)
+
 # Multiple within and between factors
-WithinS_CI(.data = data_2w2b,
-           .subject = subject,
-           .value = DV,
-           .ws_factors = c(within1, within2),
-           .bs_factors = c(between1, between2))
+within_ci(data = data_2w2b,
+           subject = subject,
+           value = DV,
+           ws_factors = c(within1, within2),
+           bs_factors = c(between1, between2))
 
 # Multiple within and between factors with graph
  data_2w2b \%>\%
-   WithinS_CI(.data = .,
-             .subject = subject,
-             .value = DV,
-             .ws_factors = c(within1, within2),
-             .bs_factors = c(between1, between2)) \%>\%
+   within_ci(data = .,
+             subject = subject,
+             value = DV,
+             ws_factors = c(within1, within2),
+             bs_factors = c(between1, between2)) \%>\%
   ggplot(aes(x = within1,
              y = sample_mean,
              group = within2)) +
@@ -63,4 +64,5 @@ WithinS_CI(.data = data_2w2b,
        title = "Example bar plot - two within two between") +
   theme_classic() +
   facet_grid(between1 ~ between2)
+
 }
